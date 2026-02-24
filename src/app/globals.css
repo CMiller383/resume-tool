@@ -1,0 +1,153 @@
+@import "tailwindcss";
+
+:root {
+  --bg: #f2f5fb;
+  --panel: #ffffff;
+  --panel-elevated: #f7f9fd;
+  --text: #101828;
+  --muted: #5f6c7b;
+  --border: #d7dee8;
+  --border-strong: #b4c0d1;
+  --accent: #0b5ed7;
+  --accent-strong: #084cab;
+  --accent-soft: #e8f1ff;
+  --success: #157347;
+  --success-soft: #e8f8ef;
+  --danger: #b42318;
+  --danger-soft: #fdecec;
+  --warn: #b54708;
+  --warn-soft: #fff3e8;
+  --warn-border: #f4cba8;
+  --info-soft: #e8f1ff;
+  --shadow-soft: 0 12px 28px rgba(15, 23, 42, 0.08);
+}
+
+@theme inline {
+  --color-background: var(--bg);
+  --color-foreground: var(--text);
+  --font-sans: var(--font-manrope);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-manrope), sans-serif;
+}
+
+::selection {
+  background: color-mix(in oklab, var(--accent) 20%, white);
+}
+
+.preview-workspace {
+  background:
+    radial-gradient(circle at 20% 15%, rgba(11, 94, 215, 0.08), transparent 34%),
+    radial-gradient(circle at 85% 25%, rgba(14, 165, 233, 0.08), transparent 32%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.7), rgba(244, 247, 252, 0.95));
+}
+
+.preview-page-frame {
+  position: relative;
+}
+
+.preview-page-frame::before {
+  content: "";
+  position: absolute;
+  inset: 8px;
+  border-radius: 18px;
+  background: rgba(15, 23, 42, 0.06);
+  filter: blur(18px);
+  z-index: 0;
+}
+
+.preview-page-frame > * {
+  position: relative;
+  z-index: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    scroll-behavior: auto !important;
+  }
+}
+
+@media print {
+  @page {
+    size: Letter;
+    margin: 0.25in;
+  }
+
+  html,
+  body {
+    background: white !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  main {
+    max-width: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  #builder-page,
+  #builder-layout,
+  #preview-pane {
+    display: block !important;
+    min-height: 0 !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .preview-workspace,
+  .preview-page-frame {
+    padding: 0 !important;
+    margin: 0 !important;
+    background: transparent !important;
+    width: auto !important;
+    height: auto !important;
+  }
+
+  .preview-page-frame::before {
+    display: none !important;
+  }
+
+  .resume-page {
+    width: 8.5in !important;
+    height: 11in !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    overflow: hidden !important;
+    background: white !important;
+  }
+
+  .resume-page-content {
+    height: 100% !important;
+    width: 100% !important;
+  }
+
+  [data-preview-scaled] {
+    transform: none !important;
+    width: auto !important;
+    height: auto !important;
+  }
+
+  a {
+    color: black !important;
+    text-decoration-color: rgba(0, 0, 0, 0.35) !important;
+  }
+}
