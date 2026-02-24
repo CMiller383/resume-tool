@@ -47,6 +47,7 @@ export function TopNav() {
               <Link
                 key={item.href}
                 href={item.href}
+                prefetch={false}
                 className={classNames(
                   "rounded-xl px-3 py-2 text-sm font-medium transition",
                   active
@@ -83,6 +84,7 @@ export function TopNav() {
           ) : (
             <Link
               href="/"
+              prefetch={false}
               className="rounded-xl border border-[color:var(--border)] bg-[color:var(--panel)] px-3 py-2 text-sm font-medium text-[color:var(--text)] transition hover:border-[color:var(--border-strong)] hover:bg-[color:var(--panel-elevated)]"
             >
               Open Builder

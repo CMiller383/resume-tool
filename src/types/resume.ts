@@ -1,6 +1,7 @@
 export const SECTION_KEYS = [
   "personal",
   "summary",
+  "education",
   "experience",
   "projects",
   "leadership",
@@ -10,10 +11,11 @@ export const SECTION_KEYS = [
 export type ResumeSectionKey = (typeof SECTION_KEYS)[number];
 export type EntrySectionKey = Extract<
   ResumeSectionKey,
-  "experience" | "projects" | "leadership"
+  "education" | "experience" | "projects" | "leadership"
 >;
 
 export const ENTRY_SECTION_KEYS: EntrySectionKey[] = [
+  "education",
   "experience",
   "projects",
   "leadership",
@@ -22,6 +24,7 @@ export const ENTRY_SECTION_KEYS: EntrySectionKey[] = [
 export const SECTION_LABELS: Record<ResumeSectionKey, string> = {
   personal: "Personal Info",
   summary: "Summary",
+  education: "Education",
   experience: "Experience",
   projects: "Projects",
   leadership: "Leadership",
@@ -109,6 +112,7 @@ export type ResumeDocument = {
   versionName: string;
   personal: PersonalInfo;
   summary: SummarySection;
+  education: ResumeEntry[];
   experience: ResumeEntry[];
   projects: ResumeEntry[];
   leadership: ResumeEntry[];

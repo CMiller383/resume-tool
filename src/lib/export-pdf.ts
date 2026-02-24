@@ -20,16 +20,27 @@ function sanitizeFileName(input: string) {
   return cleaned || "resume";
 }
 
+function todayStamp() {
+  const d = new Date();
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+}
+
 export function buildResumePdfFileName(name?: string) {
   const base = sanitizeFileName(name ?? "resume");
-  return base.endsWith(".pdf") ? base : `${base}.pdf`;
+  const dated = /\d{4}-\d{2}-\d{2}$/.test(base) ? base : `${base}-${todayStamp()}`;
+  return dated.endsWith(".pdf") ? dated : `${dated}.pdf`;
 }
 
 export async function exportResumeElementToPdf(
   element: HTMLElement,
   options?: { fileName?: string },
-) {
-  if (typeof window === "undefined") return;
+): Promise<string> {
+  if (typeof window === "undefined") {
+    throw new Error("PDF export must run in the browser");
+  }
 
   if ("fonts" in document) {
     try {
@@ -64,6 +75,7 @@ export async function exportResumeElementToPdf(
   const pageHeight = pdf.internal.pageSize.getHeight();
 
   pdf.addImage(imageData, "PNG", 0, 0, pageWidth, pageHeight, undefined, "FAST");
-  pdf.save(buildResumePdfFileName(options?.fileName));
+  const finalFileName = buildResumePdfFileName(options?.fileName);
+  pdf.save(finalFileName);
+  return finalFileName;
 }
-

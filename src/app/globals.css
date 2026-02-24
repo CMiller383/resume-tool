@@ -43,8 +43,25 @@ body {
   font-family: var(--font-manrope), sans-serif;
 }
 
+:where(a, button, input, select, textarea, summary):focus-visible {
+  outline: 2px solid rgba(11, 94, 215, 0.55);
+  outline-offset: 2px;
+  border-radius: 10px;
+}
+
 ::selection {
-  background: color-mix(in oklab, var(--accent) 20%, white);
+  background: rgba(11, 94, 215, 0.18);
+}
+
+button:not(:disabled),
+[role="button"],
+summary,
+a[href] {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
 }
 
 .preview-workspace {

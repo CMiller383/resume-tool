@@ -18,6 +18,7 @@ import {
   savePersistedUI,
 } from "@/lib/persistence";
 import { ensureValidZoom } from "@/lib/selectors";
+import { emitToast } from "@/lib/toast-events";
 import type {
   BuilderUIState,
   EntrySectionKey,
@@ -418,6 +419,11 @@ export function useResumeBuilderState() {
         setUi(createDefaultUIState());
         clearPersistedState();
         setSaveStatus("reset");
+        emitToast({
+          tone: "info",
+          title: "Builder Reset",
+          message: "Restored the sample master resume content.",
+        });
         window.setTimeout(() => setSaveStatus("saved"), 700);
       },
       dismissLoadWarning() {

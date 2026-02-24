@@ -1,8 +1,8 @@
-import { createSampleResume } from "@/lib/sample-data";
+import { createSampleResume, normalizeResumeDocumentShape } from "@/lib/sample-data";
 import type { ResumeDocument, ResumeEntry, ResumeSectionKey, SkillTag } from "@/types/resume";
 
 export type FlattenedBullet = {
-  sectionKey: Extract<ResumeSectionKey, "experience" | "projects" | "leadership">;
+  sectionKey: Extract<ResumeSectionKey, "education" | "experience" | "projects" | "leadership">;
   entryId: string;
   entryTitle: string;
   organization: string;
@@ -71,7 +71,10 @@ export function unique<T>(values: T[]) {
 }
 
 export function flattenResumeBullets(resume: ResumeDocument): FlattenedBullet[] {
-  const sections: Array<Extract<ResumeSectionKey, "experience" | "projects" | "leadership">> = [
+  const sections: Array<
+    Extract<ResumeSectionKey, "education" | "experience" | "projects" | "leadership">
+  > = [
+    "education",
     "experience",
     "projects",
     "leadership",
@@ -179,6 +182,7 @@ export function buildTailoredResumeFromSelectedBullets(
     });
 
   clone.experience = mutateEntries(clone.experience);
+  clone.education = mutateEntries(clone.education);
   clone.projects = mutateEntries(clone.projects);
   clone.leadership = mutateEntries(clone.leadership);
   clone.versionName = versionName.trim() || "Tailored Resume Draft";
@@ -207,10 +211,11 @@ export function loadMasterResumeOrSample(): ResumeDocument {
     const raw = window.localStorage.getItem("resume-tool.master-resume.v1");
     if (!raw) return createSampleResume();
     const parsed = JSON.parse(raw) as { schemaVersion?: number; data?: ResumeDocument };
-    if (parsed?.schemaVersion === 1 && parsed.data) return parsed.data;
+    if (parsed?.schemaVersion === 1 && parsed.data) {
+      return normalizeResumeDocumentShape(parsed.data);
+    }
     return createSampleResume();
   } catch {
     return createSampleResume();
   }
 }
-

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
 
 import { ResumePreviewShell } from "@/components/preview/resume-preview-shell";
 import { useResumeBuilderState } from "@/hooks/use-resume-builder-state";
@@ -58,6 +58,7 @@ function bulletMatchesSearch(bullet: ResumeBullet, query: string) {
 
 export function ResumeBuilderApp() {
   const { resume, ui, saveStatus, loadWarning, actions } = useResumeBuilderState();
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [mobilePane, setMobilePane] = useState<MobilePane>("builder");
   const query = normalizeSearch(searchQuery);
@@ -72,6 +73,31 @@ export function ResumeBuilderApp() {
     return () => window.removeEventListener("resume-tool:reset-request", handler);
   }, [actions]);
 
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      const tag = target?.tagName?.toLowerCase();
+      const isTyping =
+        tag === "input" || tag === "textarea" || tag === "select" || target?.isContentEditable;
+
+      if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key.toLowerCase() === "p") {
+        event.preventDefault();
+        setMobilePane("preview");
+        window.setTimeout(() => requestResumePdfExport({ fileName: resume.versionName }), 80);
+        return;
+      }
+
+      if (!isTyping && event.key === "/") {
+        event.preventDefault();
+        searchInputRef.current?.focus();
+        searchInputRef.current?.select();
+      }
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [resume.versionName]);
+
   const selectedCounts = useMemo(
     () =>
       Object.fromEntries(
@@ -82,6 +108,24 @@ export function ResumeBuilderApp() {
       ) as Record<ResumeSectionKey, number>,
     [resume],
   );
+
+  const handleSectionNavSelect = (section: ResumeSectionKey) => {
+    actions.setActiveSection(section);
+
+    const expandedId = `section-${section}`;
+    if (!ui.expandedSectionIds.includes(expandedId)) {
+      actions.toggleExpanded(section);
+    }
+
+    window.requestAnimationFrame(() => {
+      const node = document.getElementById(`builder-section-${section}`);
+      node?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+        inline: "nearest",
+      });
+    });
+  };
 
   return (
     <div
@@ -142,6 +186,7 @@ export function ResumeBuilderApp() {
             searchQuery={searchQuery}
             saveStatus={saveStatus}
             showTagFilters={ui.showTagFilters}
+            searchInputRef={searchInputRef}
             onVersionNameChange={actions.setVersionName}
             onSearchQueryChange={setSearchQuery}
             onToggleTagFilters={actions.toggleTagFilters}
@@ -152,7 +197,7 @@ export function ResumeBuilderApp() {
             <SectionNav
               activeSection={ui.activeSection}
               selectedCounts={selectedCounts}
-              onSelectSection={actions.setActiveSection}
+              onSelectSection={handleSectionNavSelect}
             />
           </div>
 
@@ -448,6 +493,7 @@ function BuilderSidebarHeader({
   searchQuery,
   saveStatus,
   showTagFilters,
+  searchInputRef,
   onVersionNameChange,
   onSearchQueryChange,
   onToggleTagFilters,
@@ -457,6 +503,7 @@ function BuilderSidebarHeader({
   searchQuery: string;
   saveStatus: "saved" | "saving" | "reset";
   showTagFilters: boolean;
+  searchInputRef: RefObject<HTMLInputElement | null>;
   onVersionNameChange: (value: string) => void;
   onSearchQueryChange: (value: string) => void;
   onToggleTagFilters: () => void;
@@ -488,6 +535,7 @@ function BuilderSidebarHeader({
             Search entries / bullets
           </span>
           <input
+            ref={searchInputRef}
             value={searchQuery}
             onChange={(e) => onSearchQueryChange(e.target.value)}
             placeholder="Find by title, org, bullet text..."
@@ -514,6 +562,13 @@ function BuilderSidebarHeader({
           >
             Reset to Sample
           </button>
+        </div>
+        <div className="rounded-xl border border-dashed border-[color:var(--border)] bg-[color:var(--panel)] px-3 py-2.5 text-xs leading-5 text-[color:var(--muted)]">
+          Start with toggling bullets to tailor a version live. On mobile, switch between{" "}
+          <span className="font-semibold text-[color:var(--text)]">Builder</span> and{" "}
+          <span className="font-semibold text-[color:var(--text)]">Preview</span>. Shortcuts:{" "}
+          <span className="font-semibold">/</span> search,{" "}
+          <span className="font-semibold">Ctrl/Cmd+Shift+P</span> export PDF.
         </div>
       </div>
     </div>
@@ -602,6 +657,7 @@ function SectionCard({
 
   return (
     <section
+      id={`builder-section-${section}`}
       className={classNames(
         "rounded-2xl border bg-[color:var(--panel)] shadow-[var(--shadow-soft)] transition",
         active
@@ -632,6 +688,7 @@ function SectionCard({
           <p className="mt-1 text-xs text-[color:var(--muted)]">
             {section === "personal" && "Name, contact details, links"}
             {section === "summary" && "A short positioning paragraph"}
+            {section === "education" && "Schools, degrees, dates, honors, relevant coursework"}
             {section === "experience" && "Role entries with bullet-level selection"}
             {section === "projects" && "Projects tailored by bullet relevance"}
             {section === "leadership" && "Leadership and extracurricular impact"}
@@ -702,6 +759,9 @@ function EntryEditor({
   onSetBulletRole: (bulletId: string, roleType: RoleTypeTag) => void;
   onToggleBulletSkillTag: (bulletId: string, tag: SkillTag) => void;
 }) {
+  const [collapsed, setCollapsed] = useState(false);
+  const isCollapsed = collapsed && !searchQuery;
+
   const headerMatch = !searchQuery
     ? true
     : [entry.title, entry.organization, entry.location]
@@ -711,6 +771,11 @@ function EntryEditor({
   const visibleBullets = entry.bullets.filter((bullet) =>
     headerMatch ? true : bulletMatchesSearch(bullet, searchQuery),
   );
+  const selectedBulletCount = entry.bullets.filter((bullet) => bullet.selected).length;
+  const entrySummary = [entry.title, entry.organization, entry.location]
+    .map((value) => value.trim())
+    .filter(Boolean)
+    .join(" | ");
 
   return (
     <article className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--panel-elevated)] p-3">
@@ -727,6 +792,14 @@ function EntryEditor({
           </span>
         </label>
         <div className="flex items-center gap-1">
+          <button
+            type="button"
+            aria-expanded={!isCollapsed}
+            onClick={() => setCollapsed((prev) => !prev)}
+            className="rounded-lg border border-[color:var(--border)] bg-[color:var(--panel)] px-2 py-1 text-xs font-medium text-[color:var(--text)]"
+          >
+            {isCollapsed ? "Expand" : "Collapse"}
+          </button>
           <IconButton
             label="Move entry up"
             disabled={index === 0}
@@ -747,72 +820,86 @@ function EntryEditor({
         </div>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2">
-        <Field label="Title" value={entry.title} onChange={(v) => onSetField("title", v)} />
-        <Field
-          label="Organization"
-          value={entry.organization}
-          onChange={(v) => onSetField("organization", v)}
-        />
-        <Field
-          label="Location"
-          value={entry.location}
-          onChange={(v) => onSetField("location", v)}
-        />
-        <Field
-          label="Start (YYYY-MM)"
-          value={entry.startDate}
-          onChange={(v) => onSetField("startDate", v)}
-          type="month"
-        />
-        <div className="sm:col-span-2">
-          <Field
-            label="End (YYYY-MM or Present)"
-            value={entry.endDate}
-            onChange={(v) => onSetField("endDate", v)}
-            placeholder="Present"
-          />
-        </div>
+      <div className="mb-3 rounded-xl border border-dashed border-[color:var(--border)] bg-[color:var(--panel)] px-3 py-2 text-xs text-[color:var(--muted)]">
+        <span className="font-medium text-[color:var(--text)]">
+          {entrySummary || "Untitled entry"}
+        </span>
+        <span className="mx-1.5 text-[color:var(--border-strong)]">•</span>
+        <span>
+          {selectedBulletCount}/{entry.bullets.length} bullets selected
+        </span>
       </div>
 
-      <div className="mt-4">
-        <div className="mb-2 flex items-center justify-between gap-2">
-          <h4 className="text-xs font-semibold uppercase tracking-[0.12em] text-[color:var(--muted)]">
-            Bullets ({entry.bullets.length})
-          </h4>
-          <button
-            type="button"
-            onClick={onAddBullet}
-            className="rounded-lg border border-[color:var(--border)] bg-[color:var(--panel)] px-2.5 py-1 text-xs font-medium text-[color:var(--text)]"
-          >
-            + Bullet
-          </button>
-        </div>
-
-        <div className="space-y-2.5">
-          {visibleBullets.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-[color:var(--border)] bg-[color:var(--panel)] px-3 py-3 text-sm text-[color:var(--muted)]">
-              No bullets match your search.
-            </div>
-          ) : (
-            visibleBullets.map((bullet, bulletIndex) => (
-              <BulletEditor
-                key={bullet.id}
-                bullet={bullet}
-                index={bulletIndex}
-                total={visibleBullets.length}
-                showTagFilters={showTagFilters}
-                onTextChange={(text) => onUpdateBulletText(bullet.id, text)}
-                onToggleSelected={(selected) => onToggleBullet(bullet.id, selected)}
-                onRemove={() => onRemoveBullet(bullet.id)}
-                onMove={(direction) => onMoveBullet(bullet.id, direction)}
-                onSetRoleType={(roleType) => onSetBulletRole(bullet.id, roleType)}
-                onToggleSkillTag={(tag) => onToggleBulletSkillTag(bullet.id, tag)}
+      {!isCollapsed && (
+        <>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Field label="Title" value={entry.title} onChange={(v) => onSetField("title", v)} />
+            <Field
+              label="Organization"
+              value={entry.organization}
+              onChange={(v) => onSetField("organization", v)}
+            />
+            <Field
+              label="Location"
+              value={entry.location}
+              onChange={(v) => onSetField("location", v)}
+            />
+            <Field
+              label="Start (YYYY-MM)"
+              value={entry.startDate}
+              onChange={(v) => onSetField("startDate", v)}
+              type="month"
+            />
+            <div className="sm:col-span-2">
+              <Field
+                label="End (YYYY-MM or Present)"
+                value={entry.endDate}
+                onChange={(v) => onSetField("endDate", v)}
+                placeholder="Present"
               />
-            ))
-          )}
-        </div>
-      </div>
+            </div>
+          </div>
+
+          <div className="mt-4">
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <h4 className="text-xs font-semibold uppercase tracking-[0.12em] text-[color:var(--muted)]">
+                Bullets ({entry.bullets.length})
+              </h4>
+              <button
+                type="button"
+                onClick={onAddBullet}
+                className="rounded-lg border border-[color:var(--border)] bg-[color:var(--panel)] px-2.5 py-1 text-xs font-medium text-[color:var(--text)]"
+              >
+                + Bullet
+              </button>
+            </div>
+
+            <div className="space-y-2.5">
+              {visibleBullets.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-[color:var(--border)] bg-[color:var(--panel)] px-3 py-3 text-sm text-[color:var(--muted)]">
+                  No bullets match your search.
+                </div>
+              ) : (
+                visibleBullets.map((bullet, bulletIndex) => (
+                  <BulletEditor
+                    key={bullet.id}
+                    bullet={bullet}
+                    index={bulletIndex}
+                    total={visibleBullets.length}
+                    showTagFilters={showTagFilters}
+                    onTextChange={(text) => onUpdateBulletText(bullet.id, text)}
+                    onToggleSelected={(selected) => onToggleBullet(bullet.id, selected)}
+                    onRemove={() => onRemoveBullet(bullet.id)}
+                    onMove={(direction) => onMoveBullet(bullet.id, direction)}
+                    onSetRoleType={(roleType) => onSetBulletRole(bullet.id, roleType)}
+                    onToggleSkillTag={(tag) => onToggleBulletSkillTag(bullet.id, tag)}
+                  />
+                ))
+              )}
+            </div>
+          </div>
+        </>
+      )}
     </article>
   );
 }
@@ -840,6 +927,9 @@ function BulletEditor({
   onSetRoleType: (roleType: RoleTypeTag) => void;
   onToggleSkillTag: (tag: SkillTag) => void;
 }) {
+  const [collapsed, setCollapsed] = useState(false);
+  const previewText = bullet.text.trim();
+
   return (
     <div
       className={classNames(
@@ -862,6 +952,14 @@ function BulletEditor({
           </span>
         </label>
         <div className="flex items-center gap-1">
+          <button
+            type="button"
+            aria-expanded={!collapsed}
+            onClick={() => setCollapsed((prev) => !prev)}
+            className="rounded-lg border border-[color:var(--border)] bg-[color:var(--panel-elevated)] px-2 py-1 text-xs font-medium text-[color:var(--text)]"
+          >
+            {collapsed ? "Expand" : "Collapse"}
+          </button>
           <IconButton
             label="Move bullet up"
             disabled={index === 0}
@@ -882,59 +980,73 @@ function BulletEditor({
         </div>
       </div>
 
-      <textarea
-        value={bullet.text}
-        onChange={(e) => onTextChange(e.target.value)}
-        rows={3}
-        className="w-full rounded-xl border border-[color:var(--border)] bg-[color:var(--panel-elevated)] px-3 py-2.5 text-sm leading-6 text-[color:var(--text)] outline-none focus:border-[color:var(--accent)]"
-        placeholder="Write an impact-focused bullet point."
-      />
-
-      {showTagFilters && (
-        <div className="mt-3 space-y-2">
-          <label className="grid gap-1.5">
-            <span className="text-xs font-semibold uppercase tracking-[0.12em] text-[color:var(--muted)]">
-              Role type
-            </span>
-            <select
-              value={bullet.roleType}
-              onChange={(e) => onSetRoleType(e.target.value as RoleTypeTag)}
-              className="w-full rounded-xl border border-[color:var(--border)] bg-[color:var(--panel-elevated)] px-3 py-2 text-sm text-[color:var(--text)] outline-none focus:border-[color:var(--accent)]"
-            >
-              {ROLE_TYPE_TAGS.map((roleType) => (
-                <option key={roleType} value={roleType}>
-                  {roleType}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <div className="grid gap-1.5">
-            <span className="text-xs font-semibold uppercase tracking-[0.12em] text-[color:var(--muted)]">
-              Skill tags
-            </span>
-            <div className="flex flex-wrap gap-1.5">
-              {SKILL_TAGS.map((tag) => {
-                const selected = bullet.skillTags.includes(tag);
-                return (
-                  <button
-                    key={tag}
-                    type="button"
-                    onClick={() => onToggleSkillTag(tag)}
-                    className={classNames(
-                      "rounded-full border px-2.5 py-1 text-xs font-medium transition",
-                      selected
-                        ? "border-[color:var(--accent-strong)] bg-[color:var(--accent-soft)] text-[color:var(--accent)]"
-                        : "border-[color:var(--border)] bg-[color:var(--panel-elevated)] text-[color:var(--muted)] hover:text-[color:var(--text)]",
-                    )}
-                  >
-                    {tag}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+      {collapsed ? (
+        <div className="rounded-lg border border-dashed border-[color:var(--border)] bg-[color:var(--panel-elevated)] px-2.5 py-2 text-xs leading-5 text-[color:var(--muted)]">
+          <p className="line-clamp-2">{previewText || "Empty bullet"}</p>
+          {showTagFilters && (
+            <p className="mt-1">
+              {bullet.roleType}
+              {bullet.skillTags.length > 0 ? ` • ${bullet.skillTags.join(", ")}` : ""}
+            </p>
+          )}
         </div>
+      ) : (
+        <>
+          <textarea
+            value={bullet.text}
+            onChange={(e) => onTextChange(e.target.value)}
+            rows={3}
+            className="w-full rounded-xl border border-[color:var(--border)] bg-[color:var(--panel-elevated)] px-3 py-2.5 text-sm leading-6 text-[color:var(--text)] outline-none focus:border-[color:var(--accent)]"
+            placeholder="Write an impact-focused bullet point."
+          />
+
+          {showTagFilters && (
+            <div className="mt-3 space-y-2">
+              <label className="grid gap-1.5">
+                <span className="text-xs font-semibold uppercase tracking-[0.12em] text-[color:var(--muted)]">
+                  Role type
+                </span>
+                <select
+                  value={bullet.roleType}
+                  onChange={(e) => onSetRoleType(e.target.value as RoleTypeTag)}
+                  className="w-full rounded-xl border border-[color:var(--border)] bg-[color:var(--panel-elevated)] px-3 py-2 text-sm text-[color:var(--text)] outline-none focus:border-[color:var(--accent)]"
+                >
+                  {ROLE_TYPE_TAGS.map((roleType) => (
+                    <option key={roleType} value={roleType}>
+                      {roleType}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <div className="grid gap-1.5">
+                <span className="text-xs font-semibold uppercase tracking-[0.12em] text-[color:var(--muted)]">
+                  Skill tags
+                </span>
+                <div className="flex flex-wrap gap-1.5">
+                  {SKILL_TAGS.map((tag) => {
+                    const selected = bullet.skillTags.includes(tag);
+                    return (
+                      <button
+                        key={tag}
+                        type="button"
+                        onClick={() => onToggleSkillTag(tag)}
+                        className={classNames(
+                          "rounded-full border px-2.5 py-1 text-xs font-medium transition",
+                          selected
+                            ? "border-[color:var(--accent-strong)] bg-[color:var(--accent-soft)] text-[color:var(--accent)]"
+                            : "border-[color:var(--border)] bg-[color:var(--panel-elevated)] text-[color:var(--muted)] hover:text-[color:var(--text)]",
+                        )}
+                      >
+                        {tag}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
@@ -967,12 +1079,16 @@ function SkillGroupEditor({
   onRemoveItem: (itemId: string) => void;
   onMoveItem: (itemId: string, direction: -1 | 1) => void;
 }) {
+  const [collapsed, setCollapsed] = useState(false);
+  const isCollapsed = collapsed && !searchQuery;
+
   const matchesGroupHeader = !searchQuery
     ? true
     : group.groupName.toLowerCase().includes(searchQuery);
   const visibleItems = group.items.filter((item) =>
     matchesGroupHeader ? true : item.label.toLowerCase().includes(searchQuery),
   );
+  const selectedItemCount = group.items.filter((item) => item.selected).length;
 
   return (
     <article className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--panel-elevated)] p-3">
@@ -986,6 +1102,14 @@ function SkillGroupEditor({
           />
         </div>
         <div className="mt-5 flex items-center gap-1">
+          <button
+            type="button"
+            aria-expanded={!isCollapsed}
+            onClick={() => setCollapsed((prev) => !prev)}
+            className="rounded-lg border border-[color:var(--border)] bg-[color:var(--panel)] px-2 py-1 text-xs font-medium text-[color:var(--text)]"
+          >
+            {isCollapsed ? "Expand" : "Collapse"}
+          </button>
           <IconButton
             label="Move group up"
             disabled={index === 0}
@@ -1006,68 +1130,77 @@ function SkillGroupEditor({
         </div>
       </div>
 
-      <div className="mb-2 flex items-center justify-between">
-        <h4 className="text-xs font-semibold uppercase tracking-[0.12em] text-[color:var(--muted)]">
-          Items ({group.items.length})
-        </h4>
-        <button
-          type="button"
-          onClick={onAddItem}
-          className="rounded-lg border border-[color:var(--border)] bg-[color:var(--panel)] px-2.5 py-1 text-xs font-medium text-[color:var(--text)]"
-        >
-          + Skill
-        </button>
+      <div className="mb-2 rounded-xl border border-dashed border-[color:var(--border)] bg-[color:var(--panel)] px-3 py-2 text-xs text-[color:var(--muted)]">
+        {selectedItemCount}/{group.items.length} skills selected
+        {searchQuery ? ` • ${visibleItems.length} visible in search` : ""}
       </div>
 
-      <div className="space-y-2">
-        {visibleItems.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-[color:var(--border)] bg-[color:var(--panel)] px-3 py-3 text-sm text-[color:var(--muted)]">
-            No skill items match your search.
-          </div>
-        ) : (
-          visibleItems.map((item, itemIndex) => (
-            <div
-              key={item.id}
-              className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 rounded-xl border border-[color:var(--border)] bg-[color:var(--panel)] px-2.5 py-2"
+      {!isCollapsed && (
+        <>
+          <div className="mb-2 flex items-center justify-between">
+            <h4 className="text-xs font-semibold uppercase tracking-[0.12em] text-[color:var(--muted)]">
+              Items ({group.items.length})
+            </h4>
+            <button
+              type="button"
+              onClick={onAddItem}
+              className="rounded-lg border border-[color:var(--border)] bg-[color:var(--panel)] px-2.5 py-1 text-xs font-medium text-[color:var(--text)]"
             >
-              <input
-                type="checkbox"
-                checked={item.selected}
-                onChange={(e) => onToggleItem(item.id, e.target.checked)}
-                className="h-4 w-4 accent-[color:var(--accent)]"
-              />
-              <input
-                value={item.label}
-                onChange={(e) => onUpdateItem(item.id, e.target.value)}
-                className="min-w-0 rounded-lg border border-[color:var(--border)] bg-[color:var(--panel-elevated)] px-2.5 py-1.5 text-sm text-[color:var(--text)] outline-none focus:border-[color:var(--accent)]"
-              />
-              <div className="flex items-center gap-1">
-                <IconButton
-                  label="Move skill up"
-                  disabled={itemIndex === 0}
-                  onClick={() => onMoveItem(item.id, -1)}
-                >
-                  ^
-                </IconButton>
-                <IconButton
-                  label="Move skill down"
-                  disabled={itemIndex === visibleItems.length - 1}
-                  onClick={() => onMoveItem(item.id, 1)}
-                >
-                  v
-                </IconButton>
-                <IconButton
-                  label="Delete skill"
-                  tone="danger"
-                  onClick={() => onRemoveItem(item.id)}
-                >
-                  x
-                </IconButton>
+              + Skill
+            </button>
+          </div>
+
+          <div className="space-y-2">
+            {visibleItems.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-[color:var(--border)] bg-[color:var(--panel)] px-3 py-3 text-sm text-[color:var(--muted)]">
+                No skill items match your search.
               </div>
-            </div>
-          ))
-        )}
-      </div>
+            ) : (
+              visibleItems.map((item, itemIndex) => (
+                <div
+                  key={item.id}
+                  className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 rounded-xl border border-[color:var(--border)] bg-[color:var(--panel)] px-2.5 py-2"
+                >
+                  <input
+                    type="checkbox"
+                    checked={item.selected}
+                    onChange={(e) => onToggleItem(item.id, e.target.checked)}
+                    className="h-4 w-4 accent-[color:var(--accent)]"
+                  />
+                  <input
+                    value={item.label}
+                    onChange={(e) => onUpdateItem(item.id, e.target.value)}
+                    className="min-w-0 rounded-lg border border-[color:var(--border)] bg-[color:var(--panel-elevated)] px-2.5 py-1.5 text-sm text-[color:var(--text)] outline-none focus:border-[color:var(--accent)]"
+                  />
+                  <div className="flex items-center gap-1">
+                    <IconButton
+                      label="Move skill up"
+                      disabled={itemIndex === 0}
+                      onClick={() => onMoveItem(item.id, -1)}
+                    >
+                      ^
+                    </IconButton>
+                    <IconButton
+                      label="Move skill down"
+                      disabled={itemIndex === visibleItems.length - 1}
+                      onClick={() => onMoveItem(item.id, 1)}
+                    >
+                      v
+                    </IconButton>
+                    <IconButton
+                      label="Delete skill"
+                      tone="danger"
+                      onClick={() => onRemoveItem(item.id)}
+                    >
+                      x
+                    </IconButton>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </>
+      )}
     </article>
   );
 }

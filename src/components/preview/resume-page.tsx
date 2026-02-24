@@ -40,6 +40,7 @@ export const ResumePage = forwardRef<HTMLDivElement, ResumePageProps>(function R
   const visibleSections = {
     personal: hasVisiblePersonal(resume),
     summary: hasVisibleSummary(resume),
+    education: hasVisibleEntrySection(resume.education),
     experience: hasVisibleEntrySection(resume.experience),
     projects: hasVisibleEntrySection(resume.projects),
     leadership: hasVisibleEntrySection(resume.leadership),
@@ -48,23 +49,23 @@ export const ResumePage = forwardRef<HTMLDivElement, ResumePageProps>(function R
 
   return (
     <div
-      className="resume-page relative h-[1056px] w-[816px] overflow-hidden rounded-[18px] border border-black/10 bg-white shadow-[0_24px_60px_rgba(15,23,42,0.18)]"
+      className="resume-page relative h-[1056px] w-[816px] overflow-hidden rounded-[18px] border border-[rgba(0,0,0,0.10)] bg-[#ffffff] shadow-[0_24px_60px_rgba(15,23,42,0.18)]"
       data-resume-page
     >
       <div
         ref={forwardedRef}
         data-resume-page-content
-        className="resume-page-content h-full w-full px-[0.52in] py-[0.45in] text-[12px] leading-[1.38] text-black"
+        className="resume-page-content h-full w-full px-[0.52in] py-[0.45in] text-[12px] leading-[1.38] text-[#000000]"
       >
         {visibleSections.personal && (
-          <header className="border-b border-black/35 pb-3">
+          <header className="border-b border-[rgba(0,0,0,0.35)] pb-3">
             {resume.personal.fullName && (
-              <h1 className="font-[family-name:var(--font-serif)] text-[28px] leading-[1.05] tracking-tight text-black">
+              <h1 className="font-[family-name:var(--font-serif)] text-[28px] leading-[1.05] tracking-tight text-[#000000]">
                 {resume.personal.fullName}
               </h1>
             )}
             {personalTokens.length > 0 && (
-              <p className="mt-1.5 flex flex-wrap gap-x-2 gap-y-0.5 text-[11px] text-black/80">
+              <p className="mt-1.5 flex flex-wrap gap-x-2 gap-y-0.5 text-[11px] text-[rgba(0,0,0,0.80)]">
                 {personalTokens.map((token, idx) => {
                   const isLink = token.includes(".") && !token.includes("@");
                   const href = isLink ? normalizeUrl(token) : undefined;
@@ -73,7 +74,7 @@ export const ResumePage = forwardRef<HTMLDivElement, ResumePageProps>(function R
                       href={href}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="underline decoration-black/25 underline-offset-2 hover:decoration-black/60"
+                      className="underline decoration-[rgba(0,0,0,0.25)] underline-offset-2 hover:decoration-[rgba(0,0,0,0.60)]"
                     >
                       {token}
                     </a>
@@ -83,7 +84,7 @@ export const ResumePage = forwardRef<HTMLDivElement, ResumePageProps>(function R
                   return (
                     <span key={`${token}-${idx}`} className="inline-flex items-center gap-2">
                       {idx > 0 && (
-                        <span aria-hidden="true" className="text-black/35">
+                        <span aria-hidden="true" className="text-[rgba(0,0,0,0.35)]">
                           |
                         </span>
                       )}
@@ -99,9 +100,20 @@ export const ResumePage = forwardRef<HTMLDivElement, ResumePageProps>(function R
         {visibleSections.summary && (
           <section className="resume-section mt-4">
             <ResumeSectionHeading title="Summary" />
-            <p className="mt-1.5 text-[11.4px] leading-[1.45] text-black/90">
+            <p className="mt-1.5 text-[11.4px] leading-[1.45] text-[rgba(0,0,0,0.90)]">
               {resume.summary.text}
             </p>
+          </section>
+        )}
+
+        {visibleSections.education && (
+          <section className="resume-section mt-4">
+            <ResumeSectionHeading title="Education" />
+            <div className="mt-2 space-y-2.5">
+              {resume.education.map((entry) => (
+                <ResumeEntryBlock key={entry.id} entry={entry} />
+              ))}
+            </div>
           </section>
         )}
 
@@ -144,8 +156,8 @@ export const ResumePage = forwardRef<HTMLDivElement, ResumePageProps>(function R
             <div className="mt-2 space-y-1.5 text-[11.3px]">
               {resume.skills.map((group) => (
                 <p key={group.id} className="leading-[1.35]">
-                  <span className="font-semibold text-black">{group.groupName}: </span>
-                  <span className="text-black/85">
+                  <span className="font-semibold text-[#000000]">{group.groupName}: </span>
+                  <span className="text-[rgba(0,0,0,0.85)]">
                     {group.items.map((item) => item.label).join(", ")}
                   </span>
                 </p>
@@ -160,8 +172,8 @@ export const ResumePage = forwardRef<HTMLDivElement, ResumePageProps>(function R
 
 function ResumeSectionHeading({ title }: { title: string }) {
   return (
-    <div className="border-b border-black/20 pb-0.5">
-      <h2 className="text-[11px] font-bold uppercase tracking-[0.16em] text-black">
+    <div className="border-b border-[rgba(0,0,0,0.20)] pb-0.5">
+      <h2 className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#000000]">
         {title}
       </h2>
     </div>
@@ -175,25 +187,27 @@ function ResumeEntryBlock({ entry }: { entry: PreviewResume["experience"][number
       <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-x-4">
         <div className="min-w-0">
           <p className="text-[11.5px] leading-[1.25]">
-            <span className="font-semibold text-black">{entry.title}</span>
+            <span className="font-semibold text-[#000000]">{entry.title}</span>
             {entry.organization && (
               <>
-                <span className="text-black/35"> | </span>
-                <span className="italic text-black/90">{entry.organization}</span>
+                <span className="text-[rgba(0,0,0,0.35)]"> | </span>
+                <span className="italic text-[rgba(0,0,0,0.90)]">{entry.organization}</span>
               </>
             )}
           </p>
-          {entry.location && <p className="text-[10.9px] text-black/65">{entry.location}</p>}
+          {entry.location && (
+            <p className="text-[10.9px] text-[rgba(0,0,0,0.65)]">{entry.location}</p>
+          )}
         </div>
-        <p className="text-right text-[10.9px] text-black/75">
+        <p className="text-right text-[10.9px] text-[rgba(0,0,0,0.75)]">
           {formatDateRange(entry.startDate, entry.endDate)}
         </p>
       </div>
 
       {entry.bullets.length > 0 && (
-        <ul className="mt-1.5 space-y-1 pl-4 text-[11.1px] leading-[1.35] text-black/90">
+        <ul className="mt-1.5 space-y-1 pl-4 text-[11.1px] leading-[1.35] text-[rgba(0,0,0,0.90)]">
           {entry.bullets.map((bullet) => (
-            <li key={bullet.id} className="list-disc marker:text-black/60">
+            <li key={bullet.id} className="list-disc marker:text-[rgba(0,0,0,0.60)]">
               {bullet.text}
             </li>
           ))}

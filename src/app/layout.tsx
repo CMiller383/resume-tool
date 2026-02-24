@@ -8,12 +8,14 @@ const manrope = Manrope({
   variable: "--font-manrope",
   subsets: ["latin"],
   display: "swap",
+  preload: false,
 });
 
 const sourceSerif = Source_Serif_4({
   variable: "--font-serif",
   subsets: ["latin"],
   display: "swap",
+  preload: false,
 });
 
 export const metadata: Metadata = {

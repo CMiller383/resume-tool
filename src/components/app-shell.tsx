@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
 import { TopNav } from "@/components/top-nav";
+import { ToastHost } from "@/components/toast-host";
 
 export function AppShell({ children }: { children: ReactNode }) {
   return (
@@ -16,7 +17,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <main className="mx-auto w-full max-w-[1800px] px-3 pb-3 pt-3 md:px-6 md:pb-6 md:pt-5">
         {children}
       </main>
+      <ToastHost />
     </div>
   );
 }
-

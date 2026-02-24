@@ -38,20 +38,24 @@ export function createEmptyEntry(sectionKey: EntrySectionKey): ResumeEntry {
     id: generateId(sectionKey),
     sectionKey,
     title:
-      sectionKey === "projects"
+      sectionKey === "education"
+        ? "B.S. in Business Administration"
+        : sectionKey === "projects"
         ? "Project Title"
         : sectionKey === "leadership"
           ? "Leadership Role"
           : "Role Title",
     organization:
-      sectionKey === "projects"
+      sectionKey === "education"
+        ? "Georgia Institute of Technology"
+        : sectionKey === "projects"
         ? "Organization / Class / Personal"
         : "Organization Name",
-    location: "City, ST",
-    startDate: "2025-01",
-    endDate: "Present",
+    location: sectionKey === "education" ? "Atlanta, GA" : "City, ST",
+    startDate: sectionKey === "education" ? "2023-08" : "2025-01",
+    endDate: sectionKey === "education" ? "2027-05" : "Present",
     selected: true,
-    bullets: [createEmptyBullet()],
+    bullets: sectionKey === "education" ? [] : [createEmptyBullet()],
   };
 }
 
@@ -110,43 +114,68 @@ export function createSampleResume(): ResumeDocument {
     id: "resume-master-001",
     versionName: "Master Resume",
     personal: {
-      fullName: "Jordan Lee",
-      email: "jordan.lee@email.edu",
-      phone: "(555) 314-2718",
-      location: "Boston, MA",
-      website: "jordanlee.dev",
-      linkedin: "linkedin.com/in/jordanlee",
+      fullName: "Tobe Chanow",
+      email: "tchanow@gatech.edu",
+      phone: "(404) 555-0184",
+      location: "Atlanta, GA",
+      website: "tobechanow.com",
+      linkedin: "linkedin.com/in/tobechanow",
       selected: true,
     },
     summary: {
-      selected: true,
-      text: "Analytical business and technology student with experience leading cross-functional projects, building data-driven recommendations, and translating messy problems into clear action plans.",
+      selected: false,
+      text: "Georgia Tech business student with experience in product strategy, operations, and student consulting. Strong in structured problem solving, stakeholder communication, and data-backed recommendations using SQL and Excel.",
     },
+    education: [
+      entry(
+        "edu-1",
+        "education",
+        "B.S. in Business Administration (Strategy & Innovation / Finance)",
+        "Georgia Institute of Technology, Scheller College of Business",
+        "Atlanta, GA",
+        "2023-08",
+        "2027-05",
+        [
+          bullet(
+            "edu-1-b1",
+            "GPA: 3.8/4.0. Dean's List (3 semesters). Relevant coursework: Corporate Finance, Marketing Research, Operations, Data & Visual Analytics, Business Law.",
+            "Research",
+            ["Data Analysis", "Excel", "Communication"],
+          ),
+          bullet(
+            "edu-1-b2",
+            "Selected for CREATE-X startup practicum cohort to develop and pitch a student productivity concept with cross-functional teammates.",
+            "Leadership",
+            ["Presentation", "Leadership", "Project Management"],
+          ),
+        ],
+      ),
+    ],
     experience: [
       entry(
         "exp-1",
         "experience",
-        "Product Strategy Intern",
-        "Northstar Health",
-        "Boston, MA",
+        "Business Operations Intern",
+        "Peachtree Mobility",
+        "Atlanta, GA",
         "2025-06",
         "2025-08",
         [
           bullet(
             "exp-1-b1",
-            "Built market sizing model across three service lines and synthesized findings into a recommendation deck used by directors to prioritize Q4 pilot expansion.",
-            "Product",
+            "Built weekly KPI tracker for sales, fulfillment, and support teams and used trend analysis to highlight bottlenecks, helping managers cut order-to-ship time by 14%.",
+            "Operations",
             ["Strategy", "Excel", "Presentation", "Data Analysis"],
           ),
           bullet(
             "exp-1-b2",
-            "Analyzed patient onboarding funnel data in SQL and identified drop-off drivers, informing UX changes that improved completion rate by 11% in A/B follow-up testing.",
-            "Product",
+            "Queried CRM and support data in SQL to identify high-volume issue categories, informing process changes that reduced repeat tickets during peak weeks.",
+            "Operations",
             ["SQL", "Data Analysis", "Communication"],
           ),
           bullet(
             "exp-1-b3",
-            "Partnered with engineering and operations to document requirements for a scheduling workflow automation initiative.",
+            "Partnered with product and operations leads to document requirements for a route scheduling automation pilot and coordinate rollout updates across teams.",
             "Product",
             ["Leadership", "Project Management", "Communication"],
           ),
@@ -155,21 +184,21 @@ export function createSampleResume(): ResumeDocument {
       entry(
         "exp-2",
         "experience",
-        "Business Analyst, Student Consulting Team",
-        "University Career Accelerator",
-        "Cambridge, MA",
+        "Analyst, Student Consulting Practicum",
+        "Georgia Tech Student Consulting",
+        "Atlanta, GA",
         "2024-09",
         "2025-05",
         [
           bullet(
             "exp-2-b1",
-            "Led a 5-student team delivering go-to-market recommendations for a local startup through customer interviews, competitor benchmarking, and pricing analysis.",
+            "Led a 5-student team delivering go-to-market recommendations for an Atlanta startup through customer interviews, competitor benchmarking, and pricing analysis.",
             "Consulting",
             ["Strategy", "Leadership", "Communication"],
           ),
           bullet(
             "exp-2-b2",
-            "Built Excel scenario models and presented trade-offs to the client CEO, influencing phased launch decisions.",
+            "Built Excel scenario models and presented trade-offs to the client leadership team, influencing phased market launch decisions.",
             "Consulting",
             ["Excel", "Presentation", "Data Analysis"],
           ),
@@ -180,23 +209,46 @@ export function createSampleResume(): ResumeDocument {
       entry(
         "proj-1",
         "projects",
-        "Resume Relevance Scoring Prototype",
-        "Personal Project",
+        "Campus Event Demand Forecasting Model",
+        "Georgia Tech Coursework / Personal Extension",
         "Remote",
         "2025-10",
         "Present",
         [
           bullet(
             "proj-1-b1",
-            "Developed a prototype that ranks resume bullets against job descriptions using keyword weighting and semantic similarity heuristics.",
-            "Engineering",
-            ["Python", "SQL", "Data Analysis"],
+            "Built a forecasting model for student event attendance using historical sign-up and turnout data to improve staffing and supply planning for club events.",
+            "Research",
+            ["Excel", "Data Analysis", "Presentation"],
           ),
           bullet(
             "proj-1-b2",
-            "Designed a structured data schema for resume sections, entries, and taggable bullets to support future tailoring workflows.",
-            "Engineering",
-            ["Project Management", "Communication"],
+            "Presented demand planning recommendations to student organization officers and created a reusable planning template for semester programming.",
+            "Leadership",
+            ["Project Management", "Communication", "Presentation"],
+          ),
+        ],
+      ),
+      entry(
+        "proj-2",
+        "projects",
+        "Internship Application Tracker + Resume Tailoring Tool",
+        "Personal Project",
+        "Atlanta, GA",
+        "2025-11",
+        "Present",
+        [
+          bullet(
+            "proj-2-b1",
+            "Designed a structured resume database with taggable bullets to support tailored resume generation and application tracking workflows.",
+            "Product",
+            ["Project Management", "Strategy", "Communication"],
+          ),
+          bullet(
+            "proj-2-b2",
+            "Prototyped local-first workflow for generating and saving resume versions linked to job descriptions and application status tracking.",
+            "Product",
+            ["Data Analysis", "Excel", "Leadership"],
           ),
         ],
       ),
@@ -205,21 +257,21 @@ export function createSampleResume(): ResumeDocument {
       entry(
         "lead-1",
         "leadership",
-        "President",
-        "Product Club",
-        "Boston, MA",
+        "Vice President, Professional Development",
+        "Georgia Tech Undergraduate Consulting Club",
+        "Atlanta, GA",
         "2024-05",
         "Present",
         [
           bullet(
             "lead-1-b1",
-            "Grew active membership from 40 to 115 students by launching skill workshops and alumni panels tailored to internship recruiting cycles.",
+            "Expanded active membership from 55 to 130 students by launching case prep workshops, alumni panels, and first-year onboarding sessions.",
             "Leadership",
             ["Leadership", "Communication", "Presentation"],
           ),
           bullet(
             "lead-1-b2",
-            "Managed a 9-person executive board and coordinated semester programming with the career center and industry mentors.",
+            "Managed a 10-person executive board and coordinated semester programming with campus partners, alumni mentors, and recruiting organizations.",
             "Leadership",
             ["Leadership", "Project Management"],
           ),
@@ -229,21 +281,22 @@ export function createSampleResume(): ResumeDocument {
     skills: [
       {
         id: "skills-1",
-        groupName: "Technical",
+        groupName: "Analytics & Tools",
         items: [
           { id: "skills-1-i1", label: "SQL", selected: true },
-          { id: "skills-1-i2", label: "Python", selected: true },
+          { id: "skills-1-i2", label: "Python (basic)", selected: true },
           { id: "skills-1-i3", label: "Excel / Sheets", selected: true },
-          { id: "skills-1-i4", label: "Tableau", selected: false },
+          { id: "skills-1-i4", label: "Tableau", selected: true },
         ],
       },
       {
         id: "skills-2",
-        groupName: "Business",
+        groupName: "Business & Strategy",
         items: [
           { id: "skills-2-i1", label: "Market Sizing", selected: true },
-          { id: "skills-2-i2", label: "Roadmapping", selected: true },
-          { id: "skills-2-i3", label: "Experiment Design", selected: true },
+          { id: "skills-2-i2", label: "Go-to-Market Strategy", selected: true },
+          { id: "skills-2-i3", label: "Operations Analysis", selected: true },
+          { id: "skills-2-i4", label: "Scenario Modeling", selected: true },
         ],
       },
       {
@@ -252,10 +305,36 @@ export function createSampleResume(): ResumeDocument {
         items: [
           { id: "skills-3-i1", label: "Executive Presentations", selected: true },
           { id: "skills-3-i2", label: "Stakeholder Alignment", selected: true },
+          { id: "skills-3-i3", label: "Client Interviews", selected: true },
         ],
       },
     ],
     updatedAt: nowIso(),
+  };
+}
+
+export function normalizeResumeDocumentShape(raw: unknown): ResumeDocument {
+  const sample = createSampleResume();
+  const candidate =
+    raw && typeof raw === "object" ? (raw as Partial<ResumeDocument>) : ({} as Partial<ResumeDocument>);
+
+  return {
+    ...sample,
+    ...candidate,
+    personal: {
+      ...sample.personal,
+      ...(candidate.personal ?? {}),
+    },
+    summary: {
+      ...sample.summary,
+      ...(candidate.summary ?? {}),
+    },
+    education: Array.isArray(candidate.education) ? candidate.education : sample.education,
+    experience: Array.isArray(candidate.experience) ? candidate.experience : sample.experience,
+    projects: Array.isArray(candidate.projects) ? candidate.projects : sample.projects,
+    leadership: Array.isArray(candidate.leadership) ? candidate.leadership : sample.leadership,
+    skills: Array.isArray(candidate.skills) ? candidate.skills : sample.skills,
+    updatedAt: typeof candidate.updatedAt === "string" ? candidate.updatedAt : sample.updatedAt,
   };
 }
 
@@ -265,6 +344,7 @@ export function createDefaultUIState(): BuilderUIState {
     expandedSectionIds: [
       "section-personal",
       "section-summary",
+      "section-education",
       "section-experience",
       "section-projects",
       "section-leadership",
@@ -274,4 +354,3 @@ export function createDefaultUIState(): BuilderUIState {
     showTagFilters: true,
   };
 }
-

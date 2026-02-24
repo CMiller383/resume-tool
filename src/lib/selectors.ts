@@ -8,6 +8,12 @@ import type {
 export type PreviewResume = ResumeDocument;
 
 export function derivePreviewResume(resume: ResumeDocument): PreviewResume {
+  const education = resume.education
+    .filter((entry) => entry.selected)
+    .map((entry) => ({
+      ...entry,
+      bullets: entry.bullets.filter((bullet) => bullet.selected && bullet.text.trim()),
+    }));
   const experience = resume.experience
     .filter((entry) => entry.selected)
     .map((entry) => ({
@@ -49,6 +55,7 @@ export function derivePreviewResume(resume: ResumeDocument): PreviewResume {
       ...resume.summary,
       text: resume.summary.text.trim(),
     },
+    education,
     experience,
     projects,
     leadership,
@@ -71,6 +78,7 @@ export function countSelectedForSection(
         0,
       );
     case "experience":
+    case "education":
     case "projects":
     case "leadership":
       return resume[sectionKey].filter((entry) => entry.selected).length;
@@ -84,4 +92,3 @@ export function ensureValidZoom(ui: BuilderUIState) {
   if (allowed.includes(ui.zoomPercent)) return ui.zoomPercent;
   return 100;
 }
-

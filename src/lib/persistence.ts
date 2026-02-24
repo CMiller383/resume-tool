@@ -1,3 +1,4 @@
+import { normalizeResumeDocumentShape } from "@/lib/sample-data";
 import type { BuilderUIState, ResumeDocument } from "@/types/resume";
 
 export const RESUME_STORAGE_KEY = "resume-tool.master-resume.v1";
@@ -42,7 +43,7 @@ export function loadPersistedResume(): {
     return { resume: null, corrupted: hasRaw };
   }
   if (!isEnvelope<ResumeDocument>(parsed)) return { resume: null, corrupted: true };
-  return { resume: parsed.data, corrupted: false };
+  return { resume: normalizeResumeDocumentShape(parsed.data), corrupted: false };
 }
 
 export function loadPersistedUI(): {
@@ -76,4 +77,3 @@ export function clearPersistedState() {
   window.localStorage.removeItem(RESUME_STORAGE_KEY);
   window.localStorage.removeItem(UI_STORAGE_KEY);
 }
-
