@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import { ResumePreviewShell } from "@/components/preview/resume-preview-shell";
 import { useResumeBuilderState } from "@/hooks/use-resume-builder-state";
+import { requestResumePdfExport } from "@/lib/export-pdf";
 import { countSelectedForSection, derivePreviewResume } from "@/lib/selectors";
 import {
   ENTRY_SECTION_KEYS,
@@ -116,7 +117,10 @@ export function ResumeBuilderApp() {
         </div>
         <button
           type="button"
-          onClick={() => window.print()}
+          onClick={() => {
+            setMobilePane("preview");
+            window.setTimeout(() => requestResumePdfExport(), 80);
+          }}
           className="rounded-xl border border-[color:var(--accent-strong)] bg-[color:var(--accent)] px-3 py-2 text-sm font-semibold text-white"
         >
           Export PDF

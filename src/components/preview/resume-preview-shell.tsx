@@ -2,6 +2,10 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 
+import {
+  RESUME_EXPORT_EVENT,
+  exportResumeElementToPdf,
+} from "@/lib/export-pdf";
 import type { PreviewResume } from "@/lib/selectors";
 
 import { ResumePage } from "./resume-page";
@@ -23,7 +27,20 @@ export function ResumePreviewShell({
 }: ResumePreviewShellProps) {
   const contentRef = useRef<HTMLDivElement>(null);
   const [isOverflowing, setIsOverflowing] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   const scale = zoomPercent / 100;
+
+  const handleExport = async () => {
+    if (!contentRef.current || isExporting) return;
+    setIsExporting(true);
+    try {
+      await exportResumeElementToPdf(contentRef.current, {
+        fileName: resume.versionName,
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   useEffect(() => {
     const node = contentRef.current;
@@ -44,6 +61,14 @@ export function ResumePreviewShell({
       mutation.disconnect();
     };
   }, [resume]);
+
+  useEffect(() => {
+    const onExportRequest = () => {
+      void handleExport();
+    };
+    window.addEventListener(RESUME_EXPORT_EVENT, onExportRequest);
+    return () => window.removeEventListener(RESUME_EXPORT_EVENT, onExportRequest);
+  });
 
   const previewMeta = useMemo(
     () => ({
@@ -87,10 +112,11 @@ export function ResumePreviewShell({
           </select>
           <button
             type="button"
-            onClick={() => window.print()}
+            onClick={() => void handleExport()}
+            disabled={isExporting}
             className="rounded-lg border border-[color:var(--accent-strong)] bg-[color:var(--accent)] px-3 py-2 text-sm font-semibold text-white transition hover:brightness-105"
           >
-            Export PDF
+            {isExporting ? "Exporting..." : "Export PDF"}
           </button>
         </div>
       </div>

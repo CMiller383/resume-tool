@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { requestResumePdfExport } from "@/lib/export-pdf";
+
 const NAV_ITEMS = [
   { href: "/", label: "Builder" },
   { href: "/generator", label: "Generator" },
@@ -72,7 +74,7 @@ export function TopNav() {
               </button>
               <button
                 type="button"
-                onClick={() => window.print()}
+                onClick={() => requestResumePdfExport()}
                 className="rounded-xl border border-[color:var(--accent-strong)] bg-[color:var(--accent)] px-3 py-2 text-sm font-semibold text-white shadow-[0_8px_24px_rgba(11,94,215,0.22)] transition hover:brightness-105"
               >
                 Export PDF

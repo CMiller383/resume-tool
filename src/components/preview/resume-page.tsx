@@ -53,6 +53,7 @@ export const ResumePage = forwardRef<HTMLDivElement, ResumePageProps>(function R
     >
       <div
         ref={forwardedRef}
+        data-resume-page-content
         className="resume-page-content h-full w-full px-[0.52in] py-[0.45in] text-[12px] leading-[1.38] text-black"
       >
         {visibleSections.personal && (
@@ -71,7 +72,7 @@ export const ResumePage = forwardRef<HTMLDivElement, ResumePageProps>(function R
                     <a
                       href={href}
                       target="_blank"
-                      rel="noreferrer"
+                      rel="noopener noreferrer"
                       className="underline decoration-black/25 underline-offset-2 hover:decoration-black/60"
                     >
                       {token}
@@ -201,4 +202,3 @@ function ResumeEntryBlock({ entry }: { entry: PreviewResume["experience"][number
     </article>
   );
 }
-
